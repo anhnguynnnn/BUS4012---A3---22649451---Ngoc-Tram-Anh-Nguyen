@@ -5,7 +5,7 @@ import Input from "../components/Input";
 import Layout from "../components/Layout";
 import PostCard from "../components/PostCard";
 import { mockPosts } from "../data/mockPosts";
-import type { Album, Page } from "../types";
+import type { Album, Page, Post } from "../types";
 
 const filters = ["All", "Office", "Formal", "Casual", "Streetwear", "Feminine", "Minimal"];
 
@@ -22,13 +22,15 @@ type StyleLibraryPageProps = {
   onDeleteAlbum: (albumId: string) => void;
   isLoggedIn?: boolean;
   onLoginClick?: () => void;
+  posts?: Post[];
 };
 
-export default function StyleLibraryPage({ currentPage, savedPostIds, albums, onNavigate, onSave, onCreateAlbum, onOpenAlbum, onAddPostToAlbum, onRemovePostFromAlbum, onDeleteAlbum, isLoggedIn = false, onLoginClick }: StyleLibraryPageProps) {
+export default function StyleLibraryPage({ currentPage, savedPostIds, albums, onNavigate, onSave, onCreateAlbum, onOpenAlbum, onAddPostToAlbum, onRemovePostFromAlbum, onDeleteAlbum, isLoggedIn = false, onLoginClick, posts: supabasePosts = [] }: StyleLibraryPageProps) {
+  const allPosts = supabasePosts.length > 0 ? supabasePosts : mockPosts;
   const [filter, setFilter] = useState("All");
   const [albumName, setAlbumName] = useState("");
   const [changingPostId, setChangingPostId] = useState("");
-  const savedPosts = mockPosts.filter((post) => savedPostIds.includes(post.id));
+  const savedPosts = allPosts.filter((post) => savedPostIds.includes(post.id));
   const visiblePosts = savedPosts.filter((post) => filter === "All" || [...post.styleTags, ...post.occasionTags].join(" ").toLowerCase().includes(filter.toLowerCase()));
   const findAlbumForPost = (postId: string) => albums.find((album) => album.postIds.includes(postId));
 

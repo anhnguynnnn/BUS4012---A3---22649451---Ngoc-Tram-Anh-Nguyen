@@ -20,6 +20,25 @@ export type UserAccount = {
   password: string;
 };
 
+export type AuthUser = {
+  id: string;
+  email?: string;
+  full_name?: string;
+  created_at?: string;
+  user_metadata?: Record<string, unknown>;
+};
+
+export type AuthSession = {
+  accessToken: string;
+  refreshToken: string;
+  user: AuthUser;
+};
+
+export type AuthError = {
+  message: string;
+  status?: number;
+};
+
 export type Post = {
   id: string;
   creatorName: string;

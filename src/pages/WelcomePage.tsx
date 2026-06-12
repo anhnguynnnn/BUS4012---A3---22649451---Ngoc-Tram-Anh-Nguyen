@@ -2,7 +2,7 @@ import Button from "../components/Button";
 import Layout from "../components/Layout";
 import PostCard from "../components/PostCard";
 import { mockPosts } from "../data/mockPosts";
-import type { AppPreferences, OnboardingAnswers, Page } from "../types";
+import type { AppPreferences, OnboardingAnswers, Page, Post } from "../types";
 import { defaultAppPreferences, defaultOnboarding, getMatchedPosts } from "../utils/matchingLogic";
 import { useMemo, useState } from "react";
 
@@ -16,6 +16,7 @@ type WelcomePageProps = {
   onSave?: (postId: string) => void;
   onboarding?: OnboardingAnswers;
   appPreferences?: AppPreferences;
+  posts?: Post[];
 };
 
 const features = [
@@ -24,23 +25,24 @@ const features = [
   ["Explore beyond trends", "Discover outfits that match your routine, not just the algorithm."],
 ];
 
-export default function WelcomePage({ onGetStarted, onExplore, onNavigate, isLoggedIn = false, onLoginClick, savedPostIds = [], onSave = () => undefined, onboarding = defaultOnboarding, appPreferences = defaultAppPreferences }: WelcomePageProps) {
-  const trendingPosts = useMemo(() => mockPosts.slice(0, 9), []);
+export default function WelcomePage({ onGetStarted, onExplore, onNavigate, isLoggedIn = false, onLoginClick, savedPostIds = [], onSave = () => undefined, onboarding = defaultOnboarding, appPreferences = defaultAppPreferences, posts: supabasePosts = [] }: WelcomePageProps) {
+  const allPosts = supabasePosts.length > 0 ? supabasePosts : mockPosts;
+  const trendingPosts = useMemo(() => allPosts.slice(0, 9), [allPosts]);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("All");
   const filters = ["All", "Minimal", "Office", "Casual", "Streetwear", "Feminine", "Formal"];
-  const savedPosts = useMemo(() => mockPosts.filter((post) => savedPostIds.includes(post.id)), [savedPostIds]);
+  const savedPosts = useMemo(() => allPosts.filter((post) => savedPostIds.includes(post.id)), [allPosts, savedPostIds]);
   const postsWithMatch = useMemo(() => {
-    const posts = isLoggedIn ? mockPosts : trendingPosts;
+    const sourcePosts = isLoggedIn ? allPosts : trendingPosts;
     const query = search.trim().toLowerCase();
 
-    return getMatchedPosts(posts, onboarding, savedPosts, appPreferences).filter(({ post }) => {
+    return getMatchedPosts(sourcePosts, onboarding, savedPosts, appPreferences).filter(({ post }) => {
       const text = [post.creatorName, post.caption, ...post.styleTags, ...post.fitTags, ...post.occasionTags].join(" ").toLowerCase();
       const matchesSearch = !query || text.includes(query);
       const matchesFilter = filter === "All" || text.includes(filter.toLowerCase());
       return matchesSearch && matchesFilter;
     });
-  }, [appPreferences, filter, isLoggedIn, onboarding, savedPosts, search, trendingPosts]);
+  }, [allPosts, appPreferences, filter, isLoggedIn, onboarding, savedPosts, search, trendingPosts]);
 
   const scrollToFeed = () => {
     document.getElementById("outfit-feed")?.scrollIntoView({ behavior: "smooth" });

@@ -1,10 +1,11 @@
 import Button from "../components/Button";
 import Layout from "../components/Layout";
-import type { OnboardingAnswers, Page, UserAccount } from "../types";
+import type { AuthUser, OnboardingAnswers, Page } from "../types";
 
 type AccountPageProps = {
   currentPage: Page;
-  user: UserAccount;
+  /** Authenticated Supabase user from AuthContext. */
+  user: AuthUser | null;
   onboarding: OnboardingAnswers;
   onNavigate: (page: Page) => void;
   onEditPreferences: () => void;
@@ -14,6 +15,11 @@ type AccountPageProps = {
 
 export default function AccountPage({ currentPage, user, onboarding, onNavigate, onEditPreferences, onLogout, isLoggedIn = true }: AccountPageProps) {
   const summary = [...onboarding.styleAttraction, ...onboarding.fitPreferences, ...onboarding.stylingDirection].filter(Boolean).slice(0, 6);
+
+  // Resolve display name from Supabase user metadata.
+  const displayName = user?.full_name || (user?.user_metadata?.full_name as string) || "MUSÉ User";
+  const displayEmail = user?.email || "user@muse.app";
+  const initial = displayName.charAt(0).toUpperCase();
 
   return (
     <Layout currentPage={currentPage} onNavigate={onNavigate} isLoggedIn={isLoggedIn}>
@@ -26,16 +32,16 @@ export default function AccountPage({ currentPage, user, onboarding, onNavigate,
       </section>
       <section className="mx-auto grid max-w-7xl grid-cols-1 gap-6 px-6 py-10 lg:grid-cols-[0.8fr_1.2fr]">
         <aside className="rounded-3xl border border-neutral-200 bg-white p-8 shadow-sm">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-black text-xl font-semibold text-white">M</div>
-          <h2 className="mt-6 text-2xl font-semibold">{user.fullName || "MUSÉ User"}</h2>
-          <p className="mt-1 text-neutral-500">{user.email || "user@muse.app"}</p>
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-black text-xl font-semibold text-white">{initial}</div>
+          <h2 className="mt-6 text-2xl font-semibold">{displayName}</h2>
+          <p className="mt-1 text-neutral-500">{displayEmail}</p>
           <p className="mt-4 inline-flex rounded-full bg-neutral-100 px-4 py-2 text-sm font-medium text-neutral-700">Style explorer</p>
         </aside>
         <div className="space-y-6">
           <section className="rounded-3xl border border-neutral-200 bg-white p-8 shadow-sm">
             <h2 className="text-2xl font-semibold">Style preferences</h2>
             <p className="mt-3 max-w-2xl leading-7 text-neutral-600">
-              Update what you’re drawn to so MUSÉ can keep your discovery feed feeling relevant and body-aware.
+              Update what you're drawn to so MUSÉ can keep your discovery feed feeling relevant and body-aware.
             </p>
             <div className="mt-6 flex flex-wrap gap-2">
               {[

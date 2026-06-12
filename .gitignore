@@ -55,3 +55,9 @@ Thumbs.db
 
 # Misc local files
 *.local
+
+# Certificates and keys
+*.pem
+*.key
+*.cert
+*.crt

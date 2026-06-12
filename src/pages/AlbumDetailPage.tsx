@@ -2,7 +2,7 @@ import Button from "../components/Button";
 import Layout from "../components/Layout";
 import PostCard from "../components/PostCard";
 import { mockPosts } from "../data/mockPosts";
-import type { Album, Page } from "../types";
+import type { Album, Page, Post } from "../types";
 
 type Props = {
   currentPage: Page;
@@ -11,10 +11,12 @@ type Props = {
   onSave: (postId: string) => void;
   onRemoveFromAlbum: (postId: string) => void;
   isLoggedIn?: boolean;
+  posts?: Post[];
 };
 
-export default function AlbumDetailPage({ currentPage, album, onNavigate, onSave, onRemoveFromAlbum, isLoggedIn = true }: Props) {
-  const posts = album ? mockPosts.filter((post) => album.postIds.includes(post.id)) : [];
+export default function AlbumDetailPage({ currentPage, album, onNavigate, onSave, onRemoveFromAlbum, isLoggedIn = true, posts: supabasePosts = [] }: Props) {
+  const allPosts = supabasePosts.length > 0 ? supabasePosts : mockPosts;
+  const posts = album ? allPosts.filter((post) => album.postIds.includes(post.id)) : [];
 
   return (
     <Layout currentPage={currentPage} onNavigate={onNavigate} isLoggedIn={isLoggedIn}>

@@ -137,3 +137,70 @@ export function getMatchedPosts(
     .map((post) => ({ post, match: calculateMatch(post, onboarding, savedPosts, preferences) }))
     .sort((a, b) => b.match.percentage - a.match.percentage);
 }
+
+// ---- Phase 6: Backend recommendation integration ----
+
+export type BackendRecommendation = {
+  post: {
+    id: string;
+    creator_name?: string | null;
+    image_url?: string | null;
+    description?: string | null;
+    tags?: string[] | null;
+    style_category?: string | null;
+    style_tags: string[];
+    fit_tags: string[];
+    gender_style: string[];
+    occasion_tags: string[];
+    size_range: string[];
+    height_range?: string | null;
+    body_friendly_label?: string | null;
+    match_label_primary?: string | null;
+    match_label_secondary?: string | null;
+    view_count: number;
+    save_count: number;
+    share_count: number;
+    created_at?: string | null;
+  };
+  match_percentage: number;
+  match_reason?: string | null;
+  match_reason_secondary?: string | null;
+  onboarding_score: number;
+  behaviour_score: number;
+  final_score: number;
+};
+
+/**
+ * Convert a backend recommendation into the frontend MatchResult format.
+ * Used when the frontend receives scored posts from the /recommendations endpoint.
+ */
+export function recommendationToMatchResult(rec: BackendRecommendation): MatchResult {
+  return {
+    percentage: rec.match_percentage,
+    reason: rec.match_reason ?? rec.post.body_friendly_label ?? "Recommended for you",
+    score: rec.final_score,
+  };
+}
+
+/**
+ * Convert backend PostData into the frontend Post format.
+ * Maps snake_case DB columns to camelCase frontend types.
+ */
+export function backendPostToFrontendPost(bp: BackendRecommendation["post"]): Post {
+  return {
+    id: bp.id,
+    creatorName: bp.creator_name ?? "",
+    image: bp.image_url ?? "",
+    caption: bp.description ?? "",
+    hashtags: bp.tags ?? undefined,
+    styleTags: bp.style_tags,
+    fitTags: bp.fit_tags,
+    genderStyle: bp.gender_style,
+    occasionTags: bp.occasion_tags,
+    sizeRange: bp.size_range,
+    heightRange: bp.height_range ?? "",
+    bodyFriendlyLabel: bp.body_friendly_label ?? "",
+    matchLabelPrimary: bp.match_label_primary ?? undefined,
+    matchLabelSecondary: bp.match_label_secondary ?? undefined,
+  };
+}

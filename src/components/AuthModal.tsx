@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { UserAccount } from "../types";
+import { useAuth } from "../hooks/useAuth";
 import Button from "./Button";
 import Input from "./Input";
 
@@ -7,15 +7,15 @@ type AuthModalProps = {
   isOpen: boolean;
   initialMode?: "entry" | "login" | "signup";
   onClose: () => void;
-  onLogin: (email: string, password: string) => void;
-  onSignUp: (user: UserAccount) => void;
   signUpSuccess?: boolean;
   onStartBrowsing?: () => void;
 };
 
 const isValidEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
 
-export default function AuthModal({ isOpen, initialMode = "login", onClose, onLogin, onSignUp, signUpSuccess = false, onStartBrowsing }: AuthModalProps) {
+export default function AuthModal({ isOpen, initialMode = "login", onClose, signUpSuccess = false, onStartBrowsing }: AuthModalProps) {
+  // AuthContext manages real Supabase API calls and token persistence.
+  const { signIn, signUp, isLoading, error: authError, clearError } = useAuth();
   const [mode, setMode] = useState<"entry" | "login" | "signup">(initialMode);
   const [forgotPassword, setForgotPassword] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
@@ -32,7 +32,14 @@ export default function AuthModal({ isOpen, initialMode = "login", onClose, onLo
     setForgotPassword(false);
     setResetSent(false);
     setError("");
-  }, [initialMode, isOpen]);
+    clearError();
+    // Reset all form fields so the modal always opens with a clean form.
+    setFullName("");
+    setEmail("");
+    setPassword("");
+    setConfirmPassword("");
+    setAcceptedTerms(false);
+  }, [clearError, initialMode, isOpen]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -45,7 +52,8 @@ export default function AuthModal({ isOpen, initialMode = "login", onClose, onLo
 
   if (!isOpen) return null;
 
-  const handleSignUp = () => {
+  // Call real Supabase auth via backend proxy on sign up.
+  const handleSignUp = async () => {
     if (!fullName.trim() || !email.trim() || !password || !confirmPassword) {
       setError("Please complete all required fields.");
       return;
@@ -58,15 +66,27 @@ export default function AuthModal({ isOpen, initialMode = "login", onClose, onLo
       setError("Passwords must match.");
       return;
     }
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters.");
+      return;
+    }
     if (!acceptedTerms) {
       setError("Please agree to the terms and conditions.");
       return;
     }
     setError("");
-    onSignUp({ fullName: fullName.trim(), email: email.trim(), password });
+    clearError();
+
+    try {
+      await signUp(email.trim(), password, fullName.trim());
+      onStartBrowsing?.();
+    } catch {
+      // The API error is surfaced from AuthContext.
+    }
   };
 
-  const handleLogin = () => {
+  // Call real Supabase auth via backend proxy on login.
+  const handleLogin = async () => {
     if (!email.trim() || !password) {
       setError("Please complete all required fields.");
       return;
@@ -77,7 +97,14 @@ export default function AuthModal({ isOpen, initialMode = "login", onClose, onLo
     }
 
     setError("");
-    onLogin(email.trim(), password);
+    clearError();
+
+    try {
+      await signIn(email.trim(), password);
+      onClose();
+    } catch {
+      // The API error is surfaced from AuthContext.
+    }
   };
 
   return (
@@ -85,10 +112,14 @@ export default function AuthModal({ isOpen, initialMode = "login", onClose, onLo
       <section className="relative w-full max-w-md rounded-[2rem] border border-neutral-200 bg-white p-7 shadow-2xl" onClick={(event) => event.stopPropagation()}>
         <button onClick={onClose} className="absolute right-5 top-5 text-2xl leading-none text-neutral-400 hover:text-black" aria-label="Close authentication modal">×</button>
         <p className="text-xs font-semibold uppercase tracking-[0.35em] text-neutral-400">MUSÉ account</p>
+        {/* Show backend/Supabase auth errors in a visible banner */}
+        {authError?.message && (
+          <p className="mt-3 rounded-2xl bg-red-50 p-3 text-sm text-red-700">{authError.message}</p>
+        )}
         {signUpSuccess ? (
           <div className="mt-6 text-center">
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-black text-2xl text-white">✓</div>
-            <h2 className="mt-5 text-3xl font-semibold tracking-tight">You’re signed up</h2>
+            <h2 className="mt-5 text-3xl font-semibold tracking-tight">You're signed up</h2>
             <p className="mt-3 leading-7 text-neutral-600">Your MUSÉ account has been created successfully. You can start browsing and save looks to your Style Library.</p>
             <Button onClick={onStartBrowsing ?? onClose} className="mt-6">Start browsing</Button>
           </div>
@@ -107,7 +138,7 @@ export default function AuthModal({ isOpen, initialMode = "login", onClose, onLo
         ) : forgotPassword ? (
           <div className="mt-6 space-y-4">
             <h2 className="text-3xl font-semibold tracking-tight">Reset your password</h2>
-            <p className="text-sm leading-6 text-neutral-500">Enter your email and we’ll show a prototype reset confirmation.</p>
+            <p className="text-sm leading-6 text-neutral-500">Enter your email and we'll show a prototype reset confirmation.</p>
             <Input label="Email" value={resetEmail} onChange={(event) => setResetEmail(event.target.value)} type="email" placeholder="user@muse.app" />
             <Button onClick={() => setResetSent(true)}>Send reset link</Button>
             {resetSent && <p className="rounded-2xl bg-neutral-50 p-4 text-sm text-neutral-600">If this email exists, a password reset link has been sent.</p>}
@@ -118,7 +149,7 @@ export default function AuthModal({ isOpen, initialMode = "login", onClose, onLo
             <h2 className="mt-3 text-3xl font-semibold tracking-tight">Continue your style discovery</h2>
             <div className="mt-6 grid grid-cols-2 rounded-full border border-neutral-200 bg-neutral-50 p-1">
               {(["login", "signup"] as const).map((item) => (
-                <button key={item} onClick={() => { setMode(item); setForgotPassword(false); setError(""); }} className={`rounded-full px-4 py-2 text-sm font-semibold transition ${mode === item ? "bg-black text-white" : "text-neutral-500 hover:text-black"}`}>
+                <button key={item} onClick={() => { setMode(item); setForgotPassword(false); setError(""); clearError(); }} className={`rounded-full px-4 py-2 text-sm font-semibold transition ${mode === item ? "bg-black text-white" : "text-neutral-500 hover:text-black"}`}>
                   {item === "login" ? "Log in" : "Sign up"}
                 </button>
               ))}
@@ -130,8 +161,8 @@ export default function AuthModal({ isOpen, initialMode = "login", onClose, onLo
             <Input label="Password *" value={password} onChange={(event) => setPassword(event.target.value)} type="password" placeholder="••••••••" />
             <button onClick={() => setForgotPassword(true)} className="text-sm text-neutral-500 underline-offset-4 hover:text-black hover:underline">Forgot password?</button>
             {error && <p className="text-sm text-red-600">{error}</p>}
-            <Button onClick={handleLogin}>Log in</Button>
-            <button onClick={() => { setMode("signup"); setError(""); }} className="w-full text-center text-sm text-neutral-500 underline-offset-4 hover:text-black hover:underline">Don’t have an account? Sign up</button>
+            <Button onClick={handleLogin} disabled={isLoading}>{isLoading ? "Logging in…" : "Log in"}</Button>
+            <button onClick={() => { setMode("signup"); setError(""); clearError(); }} className="w-full text-center text-sm text-neutral-500 underline-offset-4 hover:text-black hover:underline">Don't have an account? Sign up</button>
             <button onClick={onClose} className="w-full text-center text-sm text-neutral-500 underline-offset-4 hover:text-black hover:underline">Continue exploring as guest</button>
           </div>
         ) : (
@@ -142,8 +173,8 @@ export default function AuthModal({ isOpen, initialMode = "login", onClose, onLo
             <Input label="Confirm password *" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} type="password" placeholder="••••••••" />
             <label className="flex items-center gap-3 text-sm text-neutral-600"><input type="checkbox" checked={acceptedTerms} onChange={(event) => setAcceptedTerms(event.target.checked)} /> I agree to the terms and conditions</label>
             {error && <p className="text-sm text-red-600">{error}</p>}
-            <Button onClick={handleSignUp}>Create account</Button>
-            <button onClick={() => { setMode("login"); setError(""); }} className="w-full text-center text-sm text-neutral-500 underline-offset-4 hover:text-black hover:underline">Already have an account? Log in</button>
+            <Button onClick={handleSignUp} disabled={isLoading}>{isLoading ? "Creating account…" : "Create account"}</Button>
+            <button onClick={() => { setMode("login"); setError(""); clearError(); }} className="w-full text-center text-sm text-neutral-500 underline-offset-4 hover:text-black hover:underline">Already have an account? Log in</button>
           </div>
         )}
           </>

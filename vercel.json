@@ -1,3 +1,15 @@
 {
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "framework": "vite",
+  "rewrites": [
+    { "source": "/auth/(.*)", "destination": "/api/index.py" },
+    { "source": "/posts/(.*)", "destination": "/api/index.py" },
+    { "source": "/interactions", "destination": "/api/index.py" },
+    { "source": "/interactions/(.*)", "destination": "/api/index.py" },
+    { "source": "/recommendations", "destination": "/api/index.py" },
+    { "source": "/recommendations/(.*)", "destination": "/api/index.py" },
+    { "source": "/health", "destination": "/api/index.py" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }

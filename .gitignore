@@ -62,3 +62,4 @@ Thumbs.db
 *.key
 *.cert
 *.crt
+.vercel

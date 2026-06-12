@@ -1,0 +1,12 @@
+#!/bin/sh
+'''exec' '/Users/nngctrmanh/Documents/22649451 - BUS4012 - Assesment 2 - MUSE/backend/.venv/bin/python3' "$0" "$@"
+' '''
+# -*- coding: utf-8 -*-
+import sys
+from fastapi.cli import main
+if __name__ == "__main__":
+    if sys.argv[0].endswith("-script.pyw"):
+        sys.argv[0] = sys.argv[0][:-11]
+    elif sys.argv[0].endswith(".exe"):
+        sys.argv[0] = sys.argv[0][:-4]
+    sys.exit(main())

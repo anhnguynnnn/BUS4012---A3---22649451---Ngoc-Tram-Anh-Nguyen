@@ -25,10 +25,11 @@ __pycache__/
 # Environment variables and secrets
 .env
 .env.*
+!.env.example
 *.env
+!*.env.example
 backend/.env
 backend/.env.*
-!/.env.example
 !backend/.env.example
 
 # Vercel

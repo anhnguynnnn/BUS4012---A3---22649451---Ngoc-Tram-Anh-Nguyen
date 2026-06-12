@@ -17,13 +17,14 @@ print_settings_summary()
 
 app = FastAPI(title="MUSÉ Backend", version="0.1.0")
 
-# Allow both common Vite dev-server ports so CORS works regardless of which
-# port Vite picks (5173 is default, 5174 is the fallback when 5173 is busy).
-ALLOWED_ORIGINS = list(set([
-    FRONTEND_ORIGIN,
-    "http://localhost:5173",
-    "http://localhost:5174",
-]))
+# In production, only allow the configured frontend origin.
+# In development, also allow common Vite dev-server ports.
+import os as _os
+
+ALLOWED_ORIGINS = [FRONTEND_ORIGIN]
+if _os.getenv("ENVIRONMENT") != "production":
+    ALLOWED_ORIGINS.extend(["http://localhost:5173", "http://localhost:5174"])
+ALLOWED_ORIGINS = list(set(ALLOWED_ORIGINS))
 
 app.add_middleware(
     CORSMiddleware,

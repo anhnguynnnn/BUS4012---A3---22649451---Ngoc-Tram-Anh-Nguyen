@@ -210,8 +210,18 @@ async def update_profile(access_token: str, user_id: str, updates: dict[str, Any
     if response.is_error:
         _raise_supabase_error(response)
 
-    rows = response.json()
-    if not rows:
-        return {}
+    # Parse the PATCH response defensively.  Supabase PostgREST *should*
+    # return the updated row when Prefer: return=representation is set, but
+    # some configurations (e.g. certain RLS policies) may return an empty
+    # body or a non-JSON response.  In that case, fall back to a GET so
+    # the caller always receives the current profile state.
+    try:
+        rows = response.json()
+    except ValueError:
+        rows = None
 
-    return rows[0]
+    if isinstance(rows, list) and rows:
+        return rows[0]
+
+    # Fallback: re-fetch the profile with a clean GET.
+    return await get_profile(access_token, user_id)

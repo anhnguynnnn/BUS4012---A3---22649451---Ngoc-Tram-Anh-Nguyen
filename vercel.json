@@ -2,8 +2,10 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "framework": "vite",
-  "env": {
-    "UV_PYTHON": "3.12"
+  "build": {
+    "env": {
+      "UV_PYTHON": "3.12"
+    }
   },
   "rewrites": [
     { "source": "/auth/(.*)", "destination": "/api/index.py" },

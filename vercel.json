@@ -2,10 +2,8 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "framework": "vite",
-  "functions": {
-    "api/**/*.py": {
-      "runtime": "python3.12"
-    }
+  "env": {
+    "UV_PYTHON": "3.12"
   },
   "rewrites": [
     { "source": "/auth/(.*)", "destination": "/api/index.py" },

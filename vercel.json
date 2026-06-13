@@ -2,6 +2,11 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "framework": "vite",
+  "functions": {
+    "api/**/*.py": {
+      "runtime": "python3.12"
+    }
+  },
   "rewrites": [
     { "source": "/auth/(.*)", "destination": "/api/index.py" },
     { "source": "/posts/(.*)", "destination": "/api/index.py" },
